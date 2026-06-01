@@ -1,0 +1,6 @@
+{
+  "name": "flight-advisor",
+  "version": "1.0.0",
+  "description": "Elite personal flight advisor",
+  "engines": { "node": "18.x" }
+}

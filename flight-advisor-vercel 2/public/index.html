@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flight Advisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold:#c4a050;--gold-dim:#9a7830;--bg:#07091a;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.07);--text:#e8eaf0;--muted:#404868;--error:#ff7080; }
+    body { background:var(--bg);background-image:radial-gradient(ellipse at 20% 15%,rgba(20,45,100,0.4) 0%,transparent 55%),radial-gradient(ellipse at 80% 85%,rgba(10,25,60,0.3) 0%,transparent 50%);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;padding:32px 16px 60px; }
+    .container { max-width:700px;margin:0 auto; }
+    .header { text-align:center;margin-bottom:32px; }
+    .badge { display:inline-block;background:rgba(196,160,80,0.1);border:1px solid rgba(196,160,80,0.22);color:#b89040;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;padding:5px 16px;border-radius:20px;margin-bottom:14px;font-weight:500; }
+    h1 { font-family:'Playfair Display',serif;font-size:clamp(28px,6vw,46px);font-weight:700;color:#eef0f8;margin-bottom:8px;letter-spacing:-0.3px; }
+    h1 span { color:var(--gold); }
+    .tagline { color:#3a4260;font-size:13px;font-weight:300; }
+    .status-bar { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px; }
+    .status-pill { background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 13px;font-size:11px; }
+    .card { background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px; }
+    .card-title { font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);margin-bottom:20px; }
+    .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+    .grid-3 { display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px; }
+    @media(max-width:480px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr 1fr}}
+    .field { display:flex;flex-direction:column;gap:7px; }
+    label { font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:500; }
+    input,select,textarea { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:12px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;width:100%;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s; }
+    input:focus,select:focus,textarea:focus { border-color:rgba(196,160,80,0.5);background:rgba(255,255,255,0.07); }
+    input[type=date]::-webkit-calendar-picker-indicator { filter:invert(0.4); }
+    select option { background:#0d1228;color:var(--text); }
+    textarea { resize:vertical;min-height:68px; }
+    .hint { font-size:11px;color:#303550;margin-top:3px; }
+    .confirm { font-size:11px;color:var(--gold);margin-top:3px;display:none; }
+    .route-badge { background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:8px 12px;font-size:12px;color:#5a6090;display:none; }
+    .ready-summary { background:rgba(196,160,80,0.06);border:1px solid rgba(196,160,80,0.15);border-radius:8px;padding:10px 14px;font-size:12px;color:#8a8060;line-height:1.7;display:none; }
+    .ready-summary strong { color:var(--gold); }
+    .btn-gold { width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dim));border:none;border-radius:9px;color:var(--bg);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s; }
+    .btn-gold:hover { opacity:0.9; }
+    .btn-gold:disabled { opacity:0.4;cursor:not-allowed; }
+    .btn-ghost { background:transparent;border:1px solid var(--border);border-radius:7px;padding:8px 14px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer; }
+    .error-box { color:var(--error);font-size:13px;padding:10px 14px;background:rgba(255,70,90,0.07);border-radius:7px;border:1px solid rgba(255,70,90,0.15);word-break:break-word;display:none; }
+    .loading { text-align:center;padding:52px 20px; }
+    .plane { font-size:40px;display:inline-block;animation:fly 2s ease-in-out infinite;margin-bottom:16px; }
+    .loading-msg { color:var(--gold);font-size:14px;font-weight:500;margin-bottom:8px;animation:pulse 1.8s ease-in-out infinite; }
+    .loading-sub { color:#2a3050;font-size:12px; }
+    .result-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.05); }
+    .result-route { font-family:'Playfair Display',serif;font-size:20px;color:#eef0f8; }
+    .result-meta { font-size:12px;color:#303550;margin-top:4px; }
+    .analysis-line { line-height:1.8;margin-bottom:2px; }
+    .analysis-line.header { font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold);margin-top:22px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(196,160,80,0.12); }
+    .analysis-line.body { font-size:13px;color:#8a90b0; }
+    .analysis-line.spacer { height:8px; }
+    @keyframes fly { 0%,100%{transform:translateX(-5px) rotate(-4deg)}50%{transform:translateX(5px) rotate(4deg)} }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="badge">&#10022; Elite Travel Intelligence</div>
+    <h1>Your <span>Flight</span> Advisor</h1>
+    <p class="tagline">Live awards &middot; Real prices &middot; Elite strategy</p>
+    <div class="status-bar">
+      <div class="status-pill" style="color:#6aaeff">&#9679; AA Concierge Key</div>
+      <div class="status-pill" style="color:#ff8090">&#9679; Delta Diamond</div>
+      <div class="status-pill" style="color:#c4a050">&#10022; 3M+ Miles</div>
+    </div>
+  </div>
+
+  <div class="card" id="searchCard">
+    <div class="card-title">Where Are You Headed?</div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="grid-2">
+        <div class="field">
+          <label>From</label>
+          <input id="from" placeholder="JFK" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+          <div class="confirm" id="fromConfirm"></div>
+        </div>
+        <div class="field">
+          <label>To</label>
+          <input id="to" placeholder="LHR" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"/>
+          <div class="confirm" id="toConfirm"></div>
+        </div>
+      </div>
+      <div class="route-badge" id="routeBadge"></div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Departure Date</label>
+          <input type="date" id="depart"/>
+        </div>
+        <div class="field">
+          <label>Return Date (optional)</label>
+          <input type="date" id="ret" disabled/>
+          <div class="hint" id="retHint">Set departure first</div>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Cabin</label>
+          <select id="cabin">
+            <option value="economy">Economy</option>
+            <option value="premium economy">Prem Economy</option>
+            <option value="business" selected>Business</option>
+            <option value="first">First</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Passengers</label>
+          <select id="pax">
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Trip Type</label>
+          <select id="tripType">
+            <option value="roundtrip">Round Trip</option>
+            <option value="oneway">One Way</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes (optional)</label>
+        <textarea id="notes" placeholder="e.g. morning flights only, avoid connections..."></textarea>
+      </div>
+      <div class="ready-summary" id="readySummary"><strong>Ready to search:</strong> <span id="summaryText"></span></div>
+      <div class="error-box" id="errorBox"></div>
+      <button class="btn-gold" id="analyzeBtn" onclick="analyze()">Analyze My Options &rarr;</button>
+    </div>
+  </div>
+
+  <div class="card loading" id="loadingCard" style="display:none">
+    <div class="plane">&#9992;&#65039;</div>
+    <div class="loading-msg" id="loadingMsg">Initializing...</div>
+    <div class="loading-sub">Fetching live data and building your recommendation...</div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;border-color:rgba(196,160,80,0.18)">
+    <div class="result-header">
+      <div>
+        <div class="result-route" id="resultRoute"></div>
+        <div class="result-meta" id="resultMeta"></div>
+      </div>
+      <button class="btn-ghost" onclick="reset()">&#8592; New Search</button>
+    </div>
+    <div id="analysisBody"></div>
+  </div>
+</div>
+
+<script>
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("depart").min = today;
+
+  const EU = new Set(["LHR","LGW","LCY","STN","MAN","EDI","GLA","BHX","CDG","ORY","NCE","LYS","MRS","TLS","BOD","AMS","FRA","MUC","BER","HAM","DUS","STR","FCO","MXP","LIN","VCE","NAP","MAD","BCN","AGP","PMI","LIS","OPO","ZRH","GVA","BSL","VIE","BRU","CPH","ARN","OSL","HEL","ATH","IST","DUB","PRG","WAW","BUD"]);
+  const routeType = (a,b) => EU.has(a)||EU.has(b) ? "transatlantic" : "domestic";
+
+  document.getElementById("from").addEventListener("input", function() {
+    const v = this.value.toUpperCase(); this.value = v;
+    const c = document.getElementById("fromConfirm");
+    c.style.display = v.length===3 ? "block" : "none";
+    c.textContent = v.length===3 ? "-> "+v : "";
+    updateRouteBadge(); updateSummary();
+  });
+
+  document.getElementById("to").addEventListener("input", function() {
+    const v = this.value.toUpperCase(); this.value = v;
+    const c = document.getElementById("toConfirm");
+    c.style.display = v.length===3 ? "block" : "none";
+    c.textContent = v.length===3 ? "-> "+v : "";
+    updateRouteBadge(); updateSummary();
+  });
+
+  document.getElementById("depart").addEventListener("change", function() {
+    const d = this.value;
+    const retEl = document.getElementById("ret");
+    if (d) {
+      retEl.disabled = false; retEl.min = d;
+      document.getElementById("retHint").style.display = "none";
+      if (retEl.value && retEl.value < d) retEl.value = "";
+    }
+    updateSummary();
+  });
+
+  ["ret","cabin","pax"].forEach(id => document.getElementById(id).addEventListener("change", updateSummary));
+  document.getElementById("tripType").addEventListener("change", function() {
+    if (this.value === "oneway") document.getElementById("ret").value = "";
+    updateSummary();
+  });
+
+  function updateRouteBadge() {
+    const f = document.getElementById("from").value.toUpperCase();
+    const t = document.getElementById("to").value.toUpperCase();
+    const b = document.getElementById("routeBadge");
+    if (f.length===3 && t.length===3) {
+      b.style.display = "block";
+      b.textContent = routeType(f,t)==="transatlantic" ? "Transatlantic route" : "Domestic US route";
+    } else { b.style.display = "none"; }
+  }
+
+  function updateSummary() {
+    const f = document.getElementById("from").value.toUpperCase();
+    const t = document.getElementById("to").value.toUpperCase();
+    const d = document.getElementById("depart").value;
+    const r = document.getElementById("ret").value;
+    const cabin = document.getElementById("cabin").value;
+    const pax = document.getElementById("pax").value;
+    const s = document.getElementById("readySummary");
+    if (f.length===3 && t.length===3 && d) {
+      s.style.display = "block";
+      document.getElementById("summaryText").textContent = f+" -> "+t+" | "+d+(r?" - "+r:"")+" | "+cabin+" | "+pax+" pax";
+    } else { s.style.display = "none"; }
+  }
+
+  let loadingInterval;
+  const msgs = ["Fetching award availability from Seats.aero...","Pulling live cash prices from Google Flights...","Analyzing options with your elite status...","Building your personalised recommendation..."];
+
+  function startLoading() {
+    let i = 0;
+    document.getElementById("loadingMsg").textContent = msgs[0];
+    loadingInterval = setInterval(() => { i=(i+1)%msgs.length; document.getElementById("loadingMsg").textContent = msgs[i]; }, 3000);
+  }
+
+  function renderAnalysis(text) {
+    const body = document.getElementById("analysisBody");
+    body.innerHTML = "";
+    text.split("\n").forEach(line => {
+      const div = document.createElement("div");
+      if (!line.trim()) { div.className = "analysis-line spacer"; }
+      else if (/^[\u2708\u{1F4B3}\u{1F3C6}\u{1F4A1}\u2B50]/u.test(line) || /^[✈💳🏆💡⭐]/.test(line)) {
+        div.className = "analysis-line header"; div.textContent = line;
+      } else {
+        div.className = "analysis-line body";
+        div.innerHTML = line.replace(/\*\*(.*?)\*\*/g, "<strong style='color:#d0d6f0'>$1</strong>");
+      }
+      body.appendChild(div);
+    });
+  }
+
+  function reset() {
+    document.getElementById("resultCard").style.display = "none";
+    document.getElementById("searchCard").style.display = "block";
+    document.getElementById("errorBox").style.display = "none";
+  }
+
+  async function analyze() {
+    const from = document.getElementById("from").value.trim().toUpperCase();
+    const to = document.getElementById("to").value.trim().toUpperCase();
+    const depart = document.getElementById("depart").value;
+    const ret = document.getElementById("ret").value;
+    const cabin = document.getElementById("cabin").value;
+    const pax = document.getElementById("pax").value;
+    const notes = document.getElementById("notes").value;
+    const errBox = document.getElementById("errorBox");
+
+    errBox.style.display = "none";
+    const missing = [];
+    if (!from || from.length < 2) missing.push("origin");
+    if (!to || to.length < 2) missing.push("destination");
+    if (!depart) missing.push("departure date");
+    if (missing.length) { errBox.textContent = "Please fill in: " + missing.join(", "); errBox.style.display = "block"; return; }
+
+    document.getElementById("searchCard").style.display = "none";
+    document.getElementById("loadingCard").style.display = "block";
+    startLoading();
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from, to, depart, ret, cabin, pax, notes })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Server error "+res.status);
+
+      clearInterval(loadingInterval);
+      document.getElementById("loadingCard").style.display = "none";
+      document.getElementById("resultRoute").textContent = from + " -> " + to;
+      document.getElementById("resultMeta").textContent = depart + (ret ? " - Return "+ret : " (one-way)") + " | " + cabin + " | " + pax + " pax";
+      renderAnalysis(data.analysis);
+      document.getElementById("resultCard").style.display = "block";
+
+    } catch(e) {
+      clearInterval(loadingInterval);
+      document.getElementById("loadingCard").style.display = "none";
+      document.getElementById("searchCard").style.display = "block";
+      errBox.textContent = "Error: " + e.message;
+      errBox.style.display = "block";
+    }
+  }
+</script>
+</body>
+</html>
